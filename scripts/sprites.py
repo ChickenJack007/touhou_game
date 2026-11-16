@@ -12,6 +12,9 @@ class Player(py.sprite.Sprite):
         self.hitbox.y += 15
 
         self.lives = 3
+        self.hit = False
+        self.time_hit = 0
+
         self.bombs = 3
 
         self.can_shoot = True
@@ -24,11 +27,11 @@ class Player(py.sprite.Sprite):
             if self.rect.top > 0:
                 if keys[py.K_LSHIFT]:
                     if keys[py.K_RIGHT] or keys[py.K_LEFT]:
-                        self.rect.y -= 200 * dt
-                        self.hitbox.y -= 200 * dt
+                        self.rect.y -= 150 * dt
+                        self.hitbox.y -= 150 * dt
                     else:
-                        self.rect.y -= 350 * dt
-                        self.hitbox.y -= 350 * dt
+                        self.rect.y -= 300 * dt
+                        self.hitbox.y -= 300 * dt
                 else:
                     if keys[py.K_RIGHT] or keys[py.K_LEFT]:
                         self.rect.y -= 400 * dt
@@ -41,11 +44,11 @@ class Player(py.sprite.Sprite):
             if self.rect.bottom < 900:
                 if keys[py.K_LSHIFT]:
                     if keys[py.K_RIGHT] or keys[py.K_LEFT]:
-                        self.rect.y += 200 * dt
-                        self.hitbox.y += 200 * dt
+                        self.rect.y += 150 * dt
+                        self.hitbox.y += 150 * dt
                     else:
-                        self.rect.y += 350 * dt
-                        self.hitbox.y += 350 * dt
+                        self.rect.y += 300 * dt
+                        self.hitbox.y += 300 * dt
                 else:
                     if keys[py.K_RIGHT] or keys[py.K_LEFT]:
                         self.rect.y += 400 * dt
@@ -58,11 +61,11 @@ class Player(py.sprite.Sprite):
             if self.rect.left > 0:
                 if keys[py.K_LSHIFT]:
                     if keys[py.K_UP] or keys[py.K_DOWN]:
-                        self.rect.x -= 200 * dt
-                        self.hitbox.x -= 200 * dt
+                        self.rect.x -= 150 * dt
+                        self.hitbox.x -= 150 * dt
                     else:
-                        self.rect.x -= 350 * dt
-                        self.hitbox.x -= 350 * dt
+                        self.rect.x -= 300 * dt
+                        self.hitbox.x -= 300 * dt
                 else:
                     if keys[py.K_UP] or keys[py.K_DOWN]:
                         self.rect.x -= 400 * dt
@@ -75,11 +78,11 @@ class Player(py.sprite.Sprite):
             if self.rect.right < 1280-500:
                 if keys[py.K_LSHIFT]:
                     if keys[py.K_UP] or keys[py.K_DOWN]:
-                        self.rect.x += 200 * dt
-                        self.hitbox.x += 200 * dt
+                        self.rect.x += 150 * dt
+                        self.hitbox.x += 150 * dt
                     else:
-                        self.rect.x += 350 * dt
-                        self.hitbox.x += 350 * dt
+                        self.rect.x += 300 * dt
+                        self.hitbox.x += 300 * dt
                 else:
                     if keys[py.K_UP] or keys[py.K_DOWN]:
                         self.rect.x += 400 * dt
@@ -102,6 +105,7 @@ class Player(py.sprite.Sprite):
 
     def hit(self):
         self.lives -= 1
+        self.time_hit = py.time.get_ticks()
         if self.lives <= 0:
             self.kill()
 
@@ -121,17 +125,30 @@ class Player_projectile(py.sprite.Sprite):
 
 
 class Enemy_1(py.sprite.Sprite):
-    def __init__(self, groups, time_active=10, pos=(60, 60)):
+    def __init__(self, groups, projectile_group, time_active=10, pos=(60, 60)):
         super().__init__(groups)
         self.image = py.image.load('./images/enemy1.png').convert_alpha()
         self.rect = self.image.get_frect(center = pos)
         self.time_active = time_active * 1000
-        self.group = groups
+        self.group = projectile_group
+        self.hitbox = self.rect.inflate(-10, -10)
+        self.hitbox.x += 2
+        self.hitbox.y += 8
+
+        self.health = 15
 
         self.spawn_time = py.time.get_ticks()
         self.can_shoot = False
         self.time_shot = py.time.get_ticks()
         self.shoot_timer = 2000
+
+        self.directions = [
+            py.math.Vector2(0, 180),
+            py.math.Vector2(25, 160),
+            py.math.Vector2(-25, 160),
+            py.math.Vector2(50, 130),
+            py.math.Vector2(-50, 130)
+        ]
 
 
     def update(self, dt):
@@ -146,18 +163,30 @@ class Enemy_1(py.sprite.Sprite):
 
     def shoot(self, dt):
         self.time_shot = py.time.get_ticks()
-        Enemy_1_projectile(self.group, self.rect.midbottom)
+        for i in range(5):
+            Enemy_1_projectile(self.group, self.rect.midbottom, self.directions[i])
+
+    def hit(self):
+        self.health -= 1
 
 
 class Enemy_1_projectile(py.sprite.Sprite):
-    def __init__(self, groups, pos):
+    def __init__(self, groups, pos, direction):
         super().__init__(groups)
         self.image = py.image.load('./images/Enemy_1_projectile.png').convert_alpha()
         self.rect = self.image.get_frect(midtop = pos)
+        self.hitbox = self.rect.inflate(-6, -10)
+        self.direction = direction
+        #self.hitbox.x -= 1
 
     def update(self, dt):
-        if self.rect.top >= 900:
+        if self.rect.top >= 900 or self.rect.left >= 1280-500 or self.rect.right <= 0:
             self.kill()
-        self.rect.y += 200 * dt
+        #self.rect.y += 200 * dt
+        #self.hitbox.y += 200 * dt
+        self.rect.y += self.direction.y * dt
+        self.hitbox.y += self.direction.y * dt
+        self.rect.x += self.direction.x * dt
+        self.hitbox.x += self.direction.x * dt
 
 
